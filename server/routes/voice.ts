@@ -1,43 +1,41 @@
-import { Router, Request, Response } from 'express';
+import { Router } from "express";
 
 const router = Router();
-const PUBLIC_URL = process.env.PUBLIC_URL!;
 
-/**
- * POST /api/voice
- * Twilio calls this when an inbound call arrives.
- * We respond with TwiML that:
- *  1. Says a brief greeting (prevents dead air — CRITICAL)
- *  2. Immediately connects the call to our WebSocket bridge
- */
-router.post('/', (req: Request, res: Response) => {
-  const wsUrl = PUBLIC_URL.replace(/^https?/, 'wss') + '/ws';
+router.post("/api/voice", (req, res) => {
+  try {
+    console.log("📞 Incoming Twilio webhook");
+    console.log("BODY:", req.body);
 
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+    const from = req.body?.From || "unknown";
+    const to = req.body?.To || "unknown";
+
+    console.log("CALL FROM:", from);
+    console.log("CALL TO:", to);
+
+    const response = `
 <Response>
-  <Say voice="Polly.Joanna" language="en-US">One moment while we connect you.</Say>
-  <Connect>
-    <Stream url="${wsUrl}">
-      <Parameter name="caller" value="${req.body.From ?? 'unknown'}" />
-      <Parameter name="callSid" value="${req.body.CallSid ?? ''}" />
-    </Stream>
-  </Connect>
-</Response>`;
+  <Say voice="alice">
+    Thanks for calling RevFlo. Please hold while we connect you.
+  </Say>
+</Response>
+`;
 
-  res.set('Content-Type', 'text/xml');
-  res.send(twiml);
+    res.set("Content-Type", "text/xml");
+    res.send(response);
 
-  console.log(`[voice] Inbound call from ${req.body.From}, routing to WebSocket bridge`);
-});
+  } catch (error) {
+    console.error("❌ ERROR IN /api/voice:", error);
 
-/**
- * POST /api/voice/status
- * Twilio calls this with call lifecycle events.
- */
-router.post('/status', (req: Request, res: Response) => {
-  const { CallSid, CallStatus, From } = req.body;
-  console.log(`[voice] Status update — CallSid: ${CallSid}, Status: ${CallStatus}, From: ${From}`);
-  res.sendStatus(204);
+    res.set("Content-Type", "text/xml");
+    res.send(`
+<Response>
+  <Say voice="alice">
+    Sorry, we are experiencing technical difficulties.
+  </Say>
+</Response>
+`);
+  }
 });
 
 export default router;
