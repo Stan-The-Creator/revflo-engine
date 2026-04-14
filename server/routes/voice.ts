@@ -2,7 +2,8 @@ import { Router } from "express";
 
 const router = Router();
 
-router.post("/api/voice", (req, res) => {
+// 🔥 IMPORTANT: NO /api/voice HERE
+router.post("/", (req, res) => {
   try {
     console.log("📞 Incoming Twilio webhook");
     console.log("BODY:", req.body);
@@ -16,7 +17,7 @@ router.post("/api/voice", (req, res) => {
     const response = `
 <Response>
   <Say voice="alice">
-    Thanks for calling RevFlo. Please hold while we connect you.
+    Thanks for calling RevFlo. Your call is being processed.
   </Say>
 </Response>
 `;
@@ -25,13 +26,13 @@ router.post("/api/voice", (req, res) => {
     res.send(response);
 
   } catch (error) {
-    console.error("❌ ERROR IN /api/voice:", error);
+    console.error("❌ ERROR IN VOICE ROUTE:", error);
 
     res.set("Content-Type", "text/xml");
     res.send(`
 <Response>
   <Say voice="alice">
-    Sorry, we are experiencing technical difficulties.
+    Sorry, something went wrong.
   </Say>
 </Response>
 `);
